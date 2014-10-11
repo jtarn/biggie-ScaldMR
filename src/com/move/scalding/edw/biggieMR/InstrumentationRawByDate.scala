@@ -26,18 +26,15 @@ abstract class InstrumentationRawByDate(args : Args) extends Job(args) {
 	}
 
 	//  get sourcefile list
-	val slo = new SourceFileListByDate(mongoServer, mongoPort, mongoDb, mongoUser, mongoPass, topic)	
+	@transient val slo = new SourceFileListByDate(mongoServer, mongoPort, mongoDb, mongoUser, mongoPass, topic)	
 	@transient val sl = slo.extract(startDt,endDt)
-	println(sl)
 	slo.mongoClient.close
 
-//	// get start and end dates
+	// get start and end dates
 	@transient val df = DateTimeFormat.forPattern("yyyyMMdd HH:mm:ss")
 	@transient val logDf = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss z")
 	val firstEventDtM = df.parseDateTime(startDt + " 00:00:00").getMillis
 	val lastEventDtM = df.parseDateTime(endDt + " 23:59:59").getMillis
-
-//	val sl = List("hdfs:///data/raw/xact/logs/edw/mdctrails/*/paz02htp8838/noarchive/ex14091107.log.gz")
 
 	val rawInstrumentationInput = MultipleTextLineFiles(p = sl : _*)
 	val rawInstrumentationSchema = rawInstrumentationInput
@@ -53,15 +50,11 @@ abstract class InstrumentationRawByDate(args : Args) extends Job(args) {
 	val rawInstrumentation = rawInstrumentationSchema.filter('date, 'time) { dt : (String, String) =>
 	  val (date, time) = dt
 	  val eventDtRaw = date + " " + time + " UTC" 
-	  //logger.info(eventDtRaw)
 	  val eventDt = logDf.parseDateTime(eventDtRaw) 
 	  val eventDtM = eventDt.getMillis
 	  (eventDtM <= lastEventDtM) && (eventDtM >= firstEventDtM)
 	}
-	
-//	val rawInstrumentation = rawInstrumentationSchema
-//			.project ('logdate, 'logtime) 
-		
+
 			
   
 }
